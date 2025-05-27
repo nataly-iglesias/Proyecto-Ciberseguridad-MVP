@@ -4,6 +4,8 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const helmet = require('helmet');
 const bcrypt = require('bcrypt');
+const registrarLog = require('../Scripts/log');
+
 
 const app = express();
 
@@ -19,10 +21,10 @@ require('dotenv').config();
 
 // Conexión a la base de datos
 const db = mysql.createConnection({
-   host: process.env.DB_HOST,
-   user: process.env.DB_USER,   
-   password: process.env.DB_PASSWORD,
-   multipleStatements: true 
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    multipleStatements: true
 });
 
 
@@ -61,6 +63,14 @@ db.query('CREATE DATABASE IF NOT EXISTS mi_tienda', (err) => {
             cantidad INT,
             precio DECIMAL(10, 2)
         );
+        CREATE TABLE IF NOT EXISTS logs (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            usuario_id INT NOT NULL,
+            accion VARCHAR(100) NOT NULL,
+            descripcion TEXT,
+            fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (id_usuario) REFERENCES usuarios(id)
+        );
         `;
         db.query(tablesSQL, (err) => {
             if (err) {
@@ -82,7 +92,7 @@ app.post('/api/registro', (req, res) => {
     const hash = bcrypt.hashSync(contrasena, 10);
 
     const sql = 'INSERT INTO mi_tienda.usuarios (nombre, usuario, contrasena, rol) VALUES (?, ?, ?, ?)';
-    db.execute(sql, [nombre, usuario, hash, rol], (err, result) => {  
+    db.execute(sql, [nombre, usuario, hash, rol], (err, result) => {
         if (err) {
             if (err.code === 'ER_DUP_ENTRY') {
                 return res.status(409).json({ mensaje: 'El usuario ya existe' });
@@ -121,9 +131,11 @@ app.post('/usuarios', verificarRol(['administrador']), (req, res) => {
 // Crear producto - solo admin y encargado
 app.post('/api/productos', verificarRol(['administrador', 'encargado']), (req, res) => {
     const { nombre, descripcion, cantidad, precio } = req.body;
+    const usuario_id = req.usuario.id; // Aquí recuperas el ID del usuario desde el token
     const sql = 'INSERT INTO productos (nombre, descripcion, cantidad, precio) VALUES (?, ?, ?, ?)';
     db.execute(sql, [nombre, descripcion, cantidad, precio], (err) => {
         if (err) return res.status(500).json({ mensaje: 'Error al agregar producto' });
+        registrarLog(usuario_id, 'Agregar producto', `Producto: ${nombre}, Cantidad: ${cantidad}, Precio: ${precio}`);
         res.status(201).json({ mensaje: 'Producto agregado correctamente' });
     });
 });
@@ -142,6 +154,7 @@ app.put('/api/productos/:id', verificarRol(['administrador', 'encargado']), (req
     const sql = 'UPDATE productos SET nombre = ?, descripcion = ?, cantidad = ?, precio = ? WHERE id = ?';
     db.execute(sql, [nombre, descripcion, cantidad, precio, req.params.id], (err) => {
         if (err) return res.status(500).json({ mensaje: 'Error al editar producto' });
+        registrarLog(req.usuario.id, 'Editar producto', `Producto con ID ${req.params.id} modificado: ${nombre}, cantidad: ${cantidad}, precio: ${precio}`);
         res.json({ mensaje: 'Producto actualizado' });
     });
 });
@@ -151,6 +164,7 @@ app.delete('/api/productos/:id', verificarRol(['administrador']), (req, res) => 
     const sql = 'DELETE FROM productos WHERE id = ?';
     db.execute(sql, [req.params.id], (err) => {
         if (err) return res.status(500).json({ mensaje: 'Error al eliminar producto' });
+        registrarLog(req.usuario.id, 'Eliminar producto', `Producto eliminado con ID: ${req.params.id}`);
         res.json({ mensaje: 'Producto eliminado' });
     });
 });
@@ -162,6 +176,7 @@ app.post('/api/clientes', verificarRol(['administrador']), (req, res) => {
     const sql = 'INSERT INTO clientes (nombre, direccion, telefono, correo) VALUES (?, ?, ?, ?)';
     db.execute(sql, [nombre, direccion, telefono, correo], (err) => {
         if (err) return res.status(500).json({ mensaje: 'Error al registrar cliente' });
+        registrarLog(req.usuario.id, 'Agregar cliente', `Cliente agregado: ${nombre} (${correo})`);
         res.status(201).json({ mensaje: 'Cliente registrado correctamente' });
     });
 });
@@ -172,6 +187,7 @@ app.put('/api/clientes/:id', verificarRol(['administrador']), (req, res) => {
     const sql = 'UPDATE clientes SET nombre = ?, direccion = ?, telefono = ?, correo = ? WHERE id = ?';
     db.execute(sql, [nombre, direccion, telefono, correo, req.params.id], (err) => {
         if (err) return res.status(500).json({ mensaje: 'Error al editar cliente' });
+        registrarLog(req.usuario.id, 'Editar cliente', `Cliente editado con ID: ${req.params.id}`);
         res.json({ mensaje: 'Cliente actualizado' });
     });
 });
@@ -181,6 +197,7 @@ app.delete('/api/clientes/:id', verificarRol(['administrador']), (req, res) => {
     const sql = 'DELETE FROM clientes WHERE id = ?';
     db.execute(sql, [req.params.id], (err) => {
         if (err) return res.status(500).json({ mensaje: 'Error al eliminar cliente' });
+        registrarLog(req.usuario.id, 'Eliminar cliente', `Cliente eliminado con ID: ${req.params.id}`);
         res.json({ mensaje: 'Cliente eliminado' });
     });
 });
@@ -218,9 +235,11 @@ app.post('/api/login', (req, res) => {
         }
 
         const token = jwt.sign({
-            id: user.id, usuario: user.usuario, rol: user.rol }, 
+            id: user.id, usuario: user.usuario, rol: user.rol
+        },
             SECRET,
             { expiresIn: '1h' });
+        registrarLog(user.id, 'Inicio de sesión', `El usuario ${user.usuario} inició sesión`);
         res.json({ token, usuario: user.usuario, rol: user.rol });
     });
 });
