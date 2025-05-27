@@ -22,11 +22,12 @@ const db = mysql.createConnection({
    host: process.env.DB_HOST,
    user: process.env.DB_USER,   
    password: process.env.DB_PASSWORD,
+   database: 'mi_tienda',
    multipleStatements: true 
 });
 
 
-// Crear base de datos si no existe
+/* Crear base de datos si no existe
 db.query('CREATE DATABASE IF NOT EXISTS mi_tienda', (err) => {
     if (err) {
         console.error('Error creando base de datos:', err);
@@ -71,33 +72,12 @@ db.query('CREATE DATABASE IF NOT EXISTS mi_tienda', (err) => {
         });
     });
 });
+*/
 
-
-// Ruta para registrar usuario
-app.post('/api/registro', (req, res) => {
-    const { nombre, usuario, contrasena, rol } = req.body;
-    if (!nombre || !usuario || !contrasena || !rol) {
-        return res.status(400).json({ mensaje: "Faltan campos" });
-    }
-    const hash = bcrypt.hashSync(contrasena, 10);
-
-    const sql = 'INSERT INTO mi_tienda.usuarios (nombre, usuario, contrasena, rol) VALUES (?, ?, ?, ?)';
-    db.execute(sql, [nombre, usuario, hash, rol], (err, result) => {  
-        if (err) {
-            if (err.code === 'ER_DUP_ENTRY') {
-                return res.status(409).json({ mensaje: 'El usuario ya existe' });
-            }
-            return res.status(500).json({ mensaje: 'Error al registrar usuario' });
-        }
-        res.status(201).json({ mensaje: 'Usuario registrado correctamente' });
-    });
-});
-
-// Ruta para obtener todos los usuarios
 const verificarRol = require('./middleware/verificarRol');
 
-// Obtener todos los usuarios - solo admin
-app.post('/usuarios', verificarRol(['administrador']), (req, res) => {
+// Ruta para registrar usuario - solo admin
+app.post('/api/usuarios', verificarRol(['administrador']), (req, res) => {
     const { nombre, usuario, contrasena, rol } = req.body;
     if (!nombre || !usuario || !contrasena || !rol) {
         return res.status(400).json({ mensaje: "Faltan campos" });
@@ -117,6 +97,54 @@ app.post('/usuarios', verificarRol(['administrador']), (req, res) => {
     });
 });
 
+// Obtener todos los usuarios - solo admin
+app.get('/api/usuarios', verificarRol(['administrador']), (req, res) => {
+    const sql = 'SELECT id, nombre, usuario, rol FROM mi_tienda.usuarios';
+    db.execute(sql, (err, results) => {
+        res.json(results);
+    });
+});
+
+// Editar usuario - solo admin
+app.put('/api/usuarios/:id', verificarRol(['administrador']), (req, res) => {
+
+    const { nombre, usuario, contrasena, rol } = req.body;
+    if (!nombre || !usuario || !rol) {
+        return res.status(400).json({ mensaje: "Faltan campos" });
+    }
+
+    let sql = 'UPDATE mi_tienda.usuarios SET nombre = ?, usuario = ?, rol = ?';
+    const params = [nombre, usuario, rol];
+
+    if (contrasena) {
+        const hash = bcrypt.hashSync(contrasena, 10);
+        sql += ', contrasena = ?';
+        params.push(hash);
+    }
+    
+    sql += ' WHERE id = ?';
+    params.push(req.params.id);
+
+    db.execute(sql, params, (err, result) => {
+    if (err) return res.status(500).json({ mensaje: 'Error al editar usuario' });
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ mensaje: 'Usuario no encontrado' });
+    }
+    res.json({ mensaje: 'Usuario actualizado' });
+  });
+});
+
+// Eliminar usuario - solo admin
+app.delete('/api/usuarios/:id', verificarRol(['administrador']), (req, res) => {
+    const sql = 'DELETE FROM mi_tienda.usuarios WHERE id = ?';
+    db.execute(sql, [req.params.id], (err, result) => {
+    if (err) return res.status(500).json({ mensaje: 'Error al eliminar usuario' });
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ mensaje: 'Usuario no encontrado' });
+    }
+    res.json({ mensaje: 'Usuario eliminado' });
+  });
+});
 
 // Crear producto - solo admin y encargado
 app.post('/api/productos', verificarRol(['administrador', 'encargado']), (req, res) => {
@@ -186,7 +214,7 @@ app.delete('/api/clientes/:id', verificarRol(['administrador']), (req, res) => {
 });
 
 // Ver clientes - admin y vendedor
-app.get('/api/clientes', verificarRol(['administrador', 'vendedor']), (req, res) => {
+app.get('/api/clientes', verificarRol(['administrador', 'encargado', 'vendedor']), (req, res) => {
     db.execute('SELECT * FROM clientes', (err, results) => {
         if (err) return res.status(500).json({ mensaje: 'Error al obtener clientes' });
         res.json(results);

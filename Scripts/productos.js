@@ -22,11 +22,17 @@ if (rol !== 'administrador' && rol !== 'encargado') {
     document.getElementById('formProduct').style.display = 'none';
 }
 
-// Mostrar/ocultar formulario
 document.getElementById('addProduct').addEventListener('click', function () {
     const form = document.getElementById('form');
     form.style.display = (form.style.display === 'none') ? 'block' : 'none';
 });
+document.getElementById('cancelBtn').addEventListener('click', function () {
+    //cerrar el formulario
+    document.getElementById('form').style.display = 'none';
+    //resetear el formulario
+    document.getElementById('formProduct').reset();
+});
+
 
 // Mostrar navbar
 document.addEventListener("DOMContentLoaded", function () {
@@ -38,6 +44,19 @@ document.addEventListener("DOMContentLoaded", function () {
         .then(data => {
             const safeHTML = DOMPurify.sanitize(data);
             document.getElementById("navbar-container").innerHTML = safeHTML;
+
+            // Verificar el rol del usuario
+            const token = localStorage.getItem('token');
+            const payload = token ? parseJwt(token) : null;
+            const rol = payload ? payload.rol : null;
+
+            // Ocultar el enlace de registro si no es administrador
+            if (rol !== 'administrador') {
+                const navRegistro = document.getElementById('nav-registro');
+                if (navRegistro) {
+                    navRegistro.style.display = 'none'; // Ocultar el enlace de registro si no es administrador
+                }
+            }
         })
         .catch(error => console.error("Error cargando navbar:", error));
 });
@@ -137,23 +156,18 @@ fetch('http://localhost:3000/api/productos', {
             modoEdicion = true;
             idProductoEditar = id;
 
-            // Cambiar texto del botón
+            // Botones de actualizar y cancelar
             document.getElementById('addBtn').textContent = 'Actualizar';
+            document.getElementById('cancelBtn').style.display = 'inline-block';
 
             //boton de cancelar
-            const cancelButton = document.createElement('button');
-            cancelButton.textContent = 'Cancelar';
-            cancelButton.className = 'btn btn-secondary';
-            cancelButton.style.marginLeft = '10px';
-            cancelButton.addEventListener('click', function () {
+            document.getElementById('cancelBtn').addEventListener('click', function () {
                 modoEdicion = false;
                 idProductoEditar = null;
                 document.getElementById('form').style.display = 'none';
-                document.getElementById('addBtn').textContent = 'Agregar Producto';
+                document.getElementById('addBtn').textContent = 'Agregar';
                 document.getElementById('formProduct').reset();
-                cancelButton.remove();
             });
-            document.getElementById('formProduct').appendChild(cancelButton);
         });
     });
 
