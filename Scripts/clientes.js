@@ -7,6 +7,12 @@ document.getElementById('addClient').addEventListener('click', function() {
         form.style.display = 'none';
     }
 });
+document.getElementById('cancelBtn').addEventListener('click', function () {
+    //cerrar el formulario
+    document.getElementById('form').style.display = 'none';
+    //resetear el formulario
+    document.getElementById('formClient').reset();
+});
 
 // Mostrar el navbar al cargar la página
 document.addEventListener("DOMContentLoaded", function () {
@@ -18,6 +24,19 @@ fetch("/Components/navbar.html")
     .then(data => {
         const safeHTML = DOMPurify.sanitize(data);
         document.getElementById("navbar-container").innerHTML = safeHTML;
+
+        // Verificar el rol del usuario
+            const token = localStorage.getItem('token');
+            const payload = token ? parseJwt(token) : null;
+            const rol = payload ? payload.rol : null;
+
+            // Ocultar el enlace de registro si no es administrador
+            if (rol !== 'administrador') {
+                const navRegistro = document.getElementById('nav-registro');
+                if (navRegistro) {
+                    navRegistro.style.display = 'none'; // Ocultar el enlace de registro si no es administrador
+                }
+            }
     })
     .catch(error => {
         console.error("Error cargando navbar:", error);
@@ -48,23 +67,9 @@ const rol = payload ? payload.rol : null;
         document.getElementById('formClient').style.display = 'none';
     }
 
-// Mostrar navbar
-document.addEventListener("DOMContentLoaded", function () {
-    fetch("/Components/navbar.html")
-        .then(response => {
-            if (!response.ok) throw new Error('Error al cargar el navbar: ' + response.statusText);
-            return response.text();
-        })
-        .then(data => {
-            const safeHTML = DOMPurify.sanitize(data);
-            document.getElementById("navbar-container").innerHTML = safeHTML;
-        })
-        .catch(error => console.error("Error cargando navbar:", error));
-});
-
 // Variables para detectar modo edición
 let modoEdicion = false;
-let idProductoEditar = null;
+let idClientesEditar = null;
 
 // Evento del formulario (Agregar o Editar)
 document.getElementById('formClient').addEventListener('submit', function (event) {
@@ -154,23 +159,18 @@ fetch('http://localhost:3000/api/clientes', {
             modoEdicion = true;
             idClienteEditar = id;
 
-            // Cambiar texto del botón
-            document.getElementById('registerBtn').textContent = 'Actualizar';
+            // Botones de actualizar y cancelar
+            document.getElementById('addBtn').textContent = 'Actualizar';
+            document.getElementById('cancelBtn').style.display = 'inline-block';
 
             //boton de cancelar
-            const cancelButton = document.createElement('button');
-            cancelButton.textContent = 'Cancelar';
-            cancelButton.className = 'btn btn-secondary';
-            cancelButton.style.marginLeft = '10px';
-            cancelButton.addEventListener('click', function () {
+            document.getElementById('cancelBtn').addEventListener('click', function () {
                 modoEdicion = false;
                 idClienteEditar = null;
                 document.getElementById('form').style.display = 'none';
-                document.getElementById('registerBtn').textContent = 'Registrar';
+                document.getElementById('addBtn').textContent = 'Agregar';
                 document.getElementById('formClient').reset();
-                cancelButton.remove();
             });
-            document.getElementById('formClient').appendChild(cancelButton);
         });
      });
      
