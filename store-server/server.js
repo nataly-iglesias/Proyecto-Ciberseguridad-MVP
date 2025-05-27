@@ -4,6 +4,8 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const helmet = require('helmet');
 const bcrypt = require('bcrypt');
+const speakeasy = require("speakeasy");
+const qrcode = require("qrcode");
 
 const app = express();
 
@@ -83,17 +85,31 @@ app.post('/api/usuarios', verificarRol(['administrador']), (req, res) => {
         return res.status(400).json({ mensaje: "Faltan campos" });
     }
 
-    const hash = bcrypt.hashSync(contrasena, 10);
+    // Generar clave secreta para 2FA
+    const secret = speakeasy.generateSecret({ length: 20 });
 
-    const sql = 'INSERT INTO mi_tienda.usuarios (nombre, usuario, contrasena, rol) VALUES (?, ?, ?, ?)';
-    db.execute(sql, [nombre, usuario, hash, rol], (err, result) => {
+    // Generar código QR
+    qrcode.toDataURL(secret.otpauth_url, (err, qrCode) => {
         if (err) {
-            if (err.code === 'ER_DUP_ENTRY') {
-                return res.status(409).json({ mensaje: 'El usuario ya existe' });
-            }
-            return res.status(500).json({ mensaje: 'Error al registrar usuario' });
+            return res.status(500).json({ mensaje: "Error generando QR" });
         }
-        res.status(201).json({ mensaje: 'Usuario registrado correctamente' });
+
+        // Hashear la contraseña
+        const hash = bcrypt.hashSync(contrasena, 10);
+
+        // Insertar usuario en la base de datos con clave 2FA
+        const sql = 'INSERT INTO mi_tienda.usuarios (nombre, usuario, contrasena, rol, secret_2fa) VALUES (?, ?, ?, ?, ?)';
+        db.execute(sql, [nombre, usuario, hash, rol, secret.base32], (err, result) => {
+            if (err) {
+                if (err.code === 'ER_DUP_ENTRY') {
+                    return res.status(409).json({ mensaje: 'El usuario ya existe' });
+                }
+                return res.status(500).json({ mensaje: 'Error al registrar usuario' });
+            }
+
+            // Enviar QR al cliente para que lo escanee
+            res.status(201).json({ mensaje: 'Usuario registrado correctamente', qrCode });
+        });
     });
 });
 
@@ -228,8 +244,9 @@ const SECRET = process.env.JWT_SECRET
 
 // Ruta para login
 app.post('/api/login', (req, res) => {
-    const { usuario, contrasena } = req.body;
+    const { usuario, contrasena, token2FA } = req.body; // Agregar el campo de código 2FA
     const sql = 'SELECT * FROM mi_tienda.usuarios WHERE usuario = ?';
+
     db.execute(sql, [usuario], (err, results) => {
         if (err) return res.status(500).json({ mensaje: 'Error al iniciar sesión' });
 
@@ -239,17 +256,57 @@ app.post('/api/login', (req, res) => {
 
         const user = results[0];
 
+        // Validación de contraseña
         const storedHash = user.contrasena.trim();
         const match = bcrypt.compareSync(contrasena, storedHash);
         if (!match) {
             return res.status(401).json({ mensaje: 'Credenciales incorrectas' });
         }
 
+        // Validación del código 2FA
+        if (!user.secret_2fa) {
+            return res.status(400).json({ mensaje: 'Este usuario no tiene 2FA configurado.' });
+        }
+
+        const verified = speakeasy.totp.verify({
+            secret: user.secret_2fa,
+            encoding: "base32",
+            token: token2FA, // Código ingresado por el usuario
+            window: 1,
+        });
+
+        if (!verified) {
+            return res.status(401).json({ mensaje: 'Código 2FA incorrecto' });
+        }
+
+        // Generar y enviar el token JWT si todo es correcto
         const token = jwt.sign({
-            id: user.id, usuario: user.usuario, rol: user.rol }, 
-            SECRET,
-            { expiresIn: '1h' });
+            id: user.id, usuario: user.usuario, rol: user.rol 
+        }, SECRET, { expiresIn: '1h' });
+
         res.json({ token, usuario: user.usuario, rol: user.rol });
+    });
+});
+
+// Ruta para activar 2FA para usaurios ya registrados
+
+app.post('/api/activar-2fa', (req, res) => {
+    const { usuario } = req.body;
+
+    // Generar clave secreta
+    const secret = speakeasy.generateSecret({ length: 20 });
+
+    // Guardar clave en la base de datos
+    const sql = "UPDATE mi_tienda.usuarios SET secret_2fa = ? WHERE usuario = ?";
+    db.execute(sql, [secret.base32, usuario], (err, result) => {
+        if (err) return res.status(500).json({ mensaje: "Error activando 2FA" });
+
+        // Generar QR y enviarlo al usuario
+        qrcode.toDataURL(secret.otpauth_url, (err, qrCode) => {
+            if (err) return res.status(500).json({ mensaje: "Error generando QR" });
+
+            res.json({ mensaje: "2FA activado correctamente", qrCode });
+        });
     });
 });
 
