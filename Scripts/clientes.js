@@ -1,124 +1,132 @@
 // Mostrar u ocultar el formulario al hacer clic en el botón
-document.getElementById('addClient').addEventListener('click', function() {
-    const form = document.getElementById('form');
-    if (form.style.display === 'none') {
-        form.style.display = 'block';
-    } else {
-        form.style.display = 'none';
-    }
+document.getElementById("addClient").addEventListener("click", function () {
+  const form = document.getElementById("form");
+  if (form.style.display === "none") {
+    form.style.display = "block";
+  } else {
+    form.style.display = "none";
+  }
 });
-document.getElementById('cancelBtn').addEventListener('click', function () {
-    //cerrar el formulario
-    document.getElementById('form').style.display = 'none';
-    //resetear el formulario
-    document.getElementById('formClient').reset();
+document.getElementById("cancelBtn").addEventListener("click", function () {
+  //cerrar el formulario
+  document.getElementById("form").style.display = "none";
+  //resetear el formulario
+  document.getElementById("formClient").reset();
 });
 
 // Mostrar el navbar al cargar la página
 document.addEventListener("DOMContentLoaded", function () {
-fetch("/Components/navbar.html")
-    .then(response => {
-        if (!response.ok) throw new Error('Error al cargar el navbar: ' + response.statusText);
-            return response.text();
+  fetch("/Components/navbar.html")
+    .then((response) => {
+      if (!response.ok)
+        throw new Error("Error al cargar el navbar: " + response.statusText);
+      return response.text();
     })
-    .then(data => {
-        const safeHTML = DOMPurify.sanitize(data);
-        document.getElementById("navbar-container").innerHTML = safeHTML;
+    .then((data) => {
+      const safeHTML = DOMPurify.sanitize(data);
+      document.getElementById("navbar-container").innerHTML = safeHTML;
 
-        // Verificar el rol del usuario
-            const token = localStorage.getItem('token');
-            const payload = token ? parseJwt(token) : null;
-            const rol = payload ? payload.rol : null;
+      // Verificar el rol del usuario
+      const token = localStorage.getItem("token");
+      const payload = token ? parseJwt(token) : null;
+      const rol = payload ? payload.rol : null;
 
-            // Ocultar el enlace de registro si no es administrador
-            if (rol !== 'administrador') {
-                const navRegistro = document.getElementById('nav-registro');
-                if (navRegistro) {
-                    navRegistro.style.display = 'none'; // Ocultar el enlace de registro si no es administrador
-                }
-            }
+      // Ocultar el enlace de registro si no es administrador
+      if (rol !== "administrador") {
+        const navRegistro = document.getElementById("nav-registro");
+        if (navRegistro) {
+          navRegistro.style.display = "none"; // Ocultar el enlace de registro si no es administrador
+        }
+      }
     })
-    .catch(error => {
-        console.error("Error cargando navbar:", error);
+    .catch((error) => {
+      console.error("Error cargando navbar:", error);
     });
 });
 
 // Token para obtener rol
 function parseJwt(token) {
-    try {
-        const base64Url = token.split('.')[1];
-        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-        const jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
-            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-        }).join(''));
-        return JSON.parse(jsonPayload);
-    } catch (e) {
-        return null;
-    }
+  try {
+    const base64Url = token.split(".")[1];
+    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+    const jsonPayload = decodeURIComponent(
+      atob(base64)
+        .split("")
+        .map(function (c) {
+          return "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2);
+        })
+        .join("")
+    );
+    return JSON.parse(jsonPayload);
+  } catch (e) {
+    return null;
+  }
 }
 
-const token = localStorage.getItem('token');
+const token = localStorage.getItem("token");
 const payload = token ? parseJwt(token) : null;
 const rol = payload ? payload.rol : null;
 
 // Oculta el botón y formulario si no es administrador
-    if (rol !== 'administrador') {
-        document.getElementById('addClient').style.display = 'none';
-        document.getElementById('formClient').style.display = 'none';
-    }
+if (rol !== "administrador") {
+  document.getElementById("addClient").style.display = "none";
+  document.getElementById("formClient").style.display = "none";
+}
 
 // Variables para detectar modo edición
 let modoEdicion = false;
 let idClientesEditar = null;
 
 // Evento del formulario (Agregar o Editar)
-document.getElementById('formClient').addEventListener('submit', function (event) {
+document
+  .getElementById("formClient")
+  .addEventListener("submit", function (event) {
     event.preventDefault();
-    const nombre = document.getElementById('nombre').value;
-    const direccion = document.getElementById('direccion').value;
-    const telefono = document.getElementById('telefono').value;
-    const correo = document.getElementById('correo').value;
+    const nombre = document.getElementById("nombre").value;
+    const direccion = document.getElementById("direccion").value;
+    const telefono = document.getElementById("telefono").value;
+    const correo = document.getElementById("correo").value;
     const datos = { nombre, direccion, telefono, correo };
 
     const url = modoEdicion
-        ? `http://localhost:3000/api/clientes/${idClienteEditar}`
-        : 'http://localhost:3000/api/clientes';
-    const method = modoEdicion ? 'PUT' : 'POST';
+      ? `http://localhost:3000/api/clientes/${idClienteEditar}`
+      : "http://localhost:3000/api/clientes";
+    const method = modoEdicion ? "PUT" : "POST";
 
     fetch(url, {
-        method: method,
-        headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify(datos)
+      method: method,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(datos),
     })
-     .then(res => res.json())
-    .then(data => {
+      .then((res) => res.json())
+      .then((data) => {
         alert(data.mensaje);
         location.reload();
-    })
-    .catch(err => {
-         console.error('Error al guardar cliente:', err);
-        alert('Error al guardar cliente');
-    });
-});
+      })
+      .catch((err) => {
+        console.error("Error al guardar cliente:", err);
+        alert("Error al guardar cliente");
+      });
+  });
 
 // Mostrar clientes
-fetch('http://localhost:3000/api/clientes', {
-    method: 'GET',
-    headers: {
-        'Content-Type': 'application/json',
-        'Authorization': 'Bearer ' + localStorage.getItem('token')
-    }
+fetch("http://localhost:3000/api/clientes", {
+  method: "GET",
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: "Bearer " + localStorage.getItem("token"),
+  },
 })
-.then(res => res.json())
-.then(data => {
-    const clientesContainer = document.getElementById('clientList');
+  .then((res) => res.json())
+  .then((data) => {
+    const clientesContainer = document.getElementById("clientList");
 
-    data.forEach(cliente => {
-        const clienteItem = document.createElement('div');
-            const safeHTML = DOMPurify.sanitize(`
+    data.forEach((cliente) => {
+      const clienteItem = document.createElement("div");
+      const safeHTML = DOMPurify.sanitize(`
             <div class="card mb-3">
                 <div class="card-body">
                     <h5 class="card-title">Cliente: ${cliente.nombre}</h5>
@@ -132,73 +140,77 @@ fetch('http://localhost:3000/api/clientes', {
             </div>
         </div>
         `);
-        clienteItem.innerHTML = safeHTML;
-        clientesContainer.appendChild(clienteItem);
+      clienteItem.innerHTML = safeHTML;
+      clientesContainer.appendChild(clienteItem);
     });
 
     // Ocultar botón de editar si no es admin o encargado
-    if (rol !== 'administrador' && rol !== 'encargado') {
-        document.querySelectorAll('.editButton').forEach(button => button.style.display = 'none');
+    if (rol !== "administrador" && rol !== "encargado") {
+      document
+        .querySelectorAll(".editButton")
+        .forEach((button) => (button.style.display = "none"));
     }
 
     // Asignar eventos a los botones de editar
-    document.querySelectorAll('.editButton').forEach(button => {
-        button.addEventListener('click', function () {
-            const id = this.getAttribute('data-id');
-            const cliente = data.find(p => p.id == id);
+    document.querySelectorAll(".editButton").forEach((button) => {
+      button.addEventListener("click", function () {
+        const id = this.getAttribute("data-id");
+        const cliente = data.find((p) => p.id == id);
 
-            document.getElementById('nombre').value = cliente.nombre;
-            document.getElementById('direccion').value = cliente.direccion;
-            document.getElementById('telefono').value = cliente.telefono;
-            document.getElementById('correo').value = cliente.correo;
+        document.getElementById("nombre").value = cliente.nombre;
+        document.getElementById("direccion").value = cliente.direccion;
+        document.getElementById("telefono").value = cliente.telefono;
+        document.getElementById("correo").value = cliente.correo;
 
-            // Mostrar formulario si está oculto
-            document.getElementById('form').style.display = 'block';
+        // Mostrar formulario si está oculto
+        document.getElementById("form").style.display = "block";
 
-            // Cambiar modo a edición
-            modoEdicion = true;
-            idClienteEditar = id;
+        // Cambiar modo a edición
+        modoEdicion = true;
+        idClienteEditar = id;
 
-            // Botones de actualizar y cancelar
-            document.getElementById('addBtn').textContent = 'Actualizar';
-            document.getElementById('cancelBtn').style.display = 'inline-block';
+        // Botones de actualizar y cancelar
+        document.getElementById("addBtn").textContent = "Actualizar";
+        document.getElementById("cancelBtn").style.display = "inline-block";
 
-            //boton de cancelar
-            document.getElementById('cancelBtn').addEventListener('click', function () {
-                modoEdicion = false;
-                idClienteEditar = null;
-                document.getElementById('form').style.display = 'none';
-                document.getElementById('addBtn').textContent = 'Agregar';
-                document.getElementById('formClient').reset();
+        //boton de cancelar
+        document
+          .getElementById("cancelBtn")
+          .addEventListener("click", function () {
+            modoEdicion = false;
+            idClienteEditar = null;
+            document.getElementById("form").style.display = "none";
+            document.getElementById("addBtn").textContent = "Agregar";
+            document.getElementById("formClient").reset();
+          });
+      });
+    });
+
+    // Botones eliminar
+    document.querySelectorAll(".deleteButton").forEach((button) => {
+      if (rol !== "administrador") {
+        button.style.display = "none";
+      } else {
+        button.addEventListener("click", function () {
+          const id = this.getAttribute("data-id");
+          fetch(`http://localhost:3000/api/clientes/${id}`, {
+            method: "DELETE",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: "Bearer " + localStorage.getItem("token"),
+            },
+          })
+            .then((res) => res.json())
+            .then((data) => {
+              alert(data.mensaje);
+              location.reload();
+            })
+            .catch((err) => {
+              console.error("Error al eliminar producto:", err);
+              alert("Error al eliminar cliente");
             });
         });
-     });
-     
-     // Botones eliminar
-     document.querySelectorAll('.deleteButton').forEach(button => {
-        if (rol !== 'administrador') {
-            button.style.display = 'none';
-        } else {
-            button.addEventListener('click', function () {
-                const id = this.getAttribute('data-id');
-                    fetch(`http://localhost:3000/api/clientes/${id}`, {
-                        method: 'DELETE',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': 'Bearer ' + localStorage.getItem('token')
-                        }
-                    })
-                    .then(res => res.json())
-                    .then(data => {
-                        alert(data.mensaje);
-                        location.reload();
-                    })
-                    .catch(err => {
-                        console.error('Error al eliminar producto:', err);
-                        alert('Error al eliminar cliente');
-                        });
-            });
-        }
+      }
     });
-})
-.catch(err => console.error('Error al cargar productos:', err));
+  })
+  .catch((err) => console.error("Error al cargar productos:", err));

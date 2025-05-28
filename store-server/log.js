@@ -1,13 +1,13 @@
-const mysql = require('mysql2');
+const mysql = require("mysql2");
 
-require('dotenv').config();
+require("dotenv").config();
 
 const db = mysql.createConnection({
-   host: process.env.DB_HOST,
-   user: process.env.DB_USER,   
-   password: process.env.DB_PASSWORD,
-   database: 'mi_tienda',
-   multipleStatements: true 
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: "mi_tienda",
+  multipleStatements: true,
 });
 
 /**
@@ -17,16 +17,17 @@ const db = mysql.createConnection({
  * @param {string} descripcion - Detalle adicional sobre la acción
  */
 function registrarLog(usuario_id, accion, descripcion) {
-    const sql = 'INSERT INTO logs (usuario_id, accion, descripcion) VALUES (?, ?, ?)';
-    const valores = [usuario_id, accion, descripcion];
+  const sql =
+    "INSERT INTO logs (usuario_id, accion, descripcion) VALUES (?, ?, ?)";
+  const valores = [usuario_id, accion, descripcion];
 
-    db.execute(sql, valores, (err) => {
-        if (err) {
-            console.error('Error al registrar log:', err);
-        } else {
-            console.log(`Log registrado: [${accion}] - Usuario ID: ${usuario_id}`);
-        }
-    });
+  db.execute(sql, valores, (err) => {
+    if (err) {
+      console.error("Error al registrar log:", err);
+    } else {
+      console.log(`Log registrado: [${accion}] - Usuario ID: ${usuario_id}`);
+    }
+  });
 }
 
 module.exports = registrarLog;

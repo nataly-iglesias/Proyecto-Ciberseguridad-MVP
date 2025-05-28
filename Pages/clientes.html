@@ -19,7 +19,12 @@
     <div class="container mt-4">
       <div class="d-flex align-items-center mb-4">
         <h1 class="fw-semibold">Clientes</h1>
-        <button id="addClient" class="btn btn-dark btn-lg rounded-circle m-4" title="Agregar nuevo cliente"> + </button>
+        <button
+          id="addClient"
+          class="btn btn-dark btn-lg rounded-circle m-4"
+          title="Agregar nuevo cliente">
+          +
+        </button>
       </div>
 
       <div id="form" class="mt-3 mb-3" style="display: none">
@@ -27,23 +32,54 @@
         <form id="formClient" autocomplete="off">
           <div class="mb-3">
             <label class="form-label" for="nombre">Nombre:</label>
-            <input class="form-control" type="text" id="nombre" name="nombre" maxlength="30" required />
+            <input
+              class="form-control"
+              type="text"
+              id="nombre"
+              name="nombre"
+              maxlength="30"
+              required />
           </div>
           <div class="mb-3">
             <label class="form-label" for="direccion">Dirección:</label>
-            <input class="form-control" type="text" id="direccion" name="direccion" maxlength="50" required />
+            <input
+              class="form-control"
+              type="text"
+              id="direccion"
+              name="direccion"
+              maxlength="50"
+              required />
           </div>
           <div class="mb-3">
             <label class="form-label" for="telefono">Teléfono:</label>
-            <input class="form-control" type="number" id="telefono" name="telefono" maxlength="10" required />
+            <input
+              class="form-control"
+              type="number"
+              id="telefono"
+              name="telefono"
+              maxlength="10"
+              required />
           </div>
           <div class="mb-3">
             <label class="form-label" for="correo">Correo:</label>
-            <input class="form-control" type="text" id="correo" name="correo" maxlength="30" required />
+            <input
+              class="form-control"
+              type="text"
+              id="correo"
+              name="correo"
+              maxlength="30"
+              required />
           </div>
-          <div id="buttonContainer" class="d-flex justify-content-end" style="display: none">
-            <button class="btn btn-secondary me-2" type="button" id="cancelBtn"> Cancelar </button>
-            <button class="btn btn-primary" type="submit" id="addBtn"> Agregar </button>
+          <div
+            id="buttonContainer"
+            class="d-flex justify-content-end"
+            style="display: none">
+            <button class="btn btn-secondary me-2" type="button" id="cancelBtn">
+              Cancelar
+            </button>
+            <button class="btn btn-primary" type="submit" id="addBtn">
+              Agregar
+            </button>
           </div>
         </form>
       </div>
@@ -55,6 +91,5 @@
         <!-- Aquí se generarán los clientes dinámicamente -->
       </div>
     </div>
-    
   </body>
 </html>

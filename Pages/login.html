@@ -1,37 +1,54 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-SgOJa3DmI69IUzQ2PVdRZhwQ+dy64/BUtbMJw1MZ8t5HZApcHrRKUc4W0kG879m7" crossorigin="anonymous">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.5/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-SgOJa3DmI69IUzQ2PVdRZhwQ+dy64/BUtbMJw1MZ8t5HZApcHrRKUc4W0kG879m7"
+      crossorigin="anonymous" />
     <script src="/Scripts/login.js" defer></script>
     <script src="https://www.google.com/recaptcha/api.js" async defer></script>
     <title>Inicio de sesión</title>
-</head>
-<body class="bg-light d-flex justify-content-center align-items-center vh-100">
+  </head>
+  <body
+    class="bg-light d-flex justify-content-center align-items-center vh-100">
+    <div class="card shadow p-4" style="max-width: 400px; width: 100%">
+      <h2 class="text-center mb-4">Iniciar sesión</h2>
 
-  <div class="card shadow p-4" style="max-width: 400px; width: 100%;">
-    <h2 class="text-center mb-4">Iniciar sesión</h2>
-
-    <form action="/api/login" method="POST" autocomplete="off">
-      <div class="mb-3">
-        <label for="username" class="form-label">Usuario</label>
-        <input type="text" class="form-control" id="username" name="username" maxlength="15" required>
-      </div>
-      <div class="mb-3">
-        <label for="password" class="form-label">Contraseña</label>
-        <input type="password" class="form-control" id="password" name="password" minlength="8" maxlength="16" autocomplete="new-password" required>
-      </div>
-      <div class="d-grid">
-        <div class="g-recaptcha mb-3" data-sitekey="6Ld7VUwrAAAAAEtrgxoaoSsMppLfBg6LM9MUppng"></div>
-        <button class="btn btn-primary m-3" type="submit">Iniciar sesión</button>
-      </div>        
-    </form>
-  </div>
-
-
-
-
-        
-</body>
+      <form action="/api/login" method="POST" autocomplete="off">
+        <div class="mb-3">
+          <label for="username" class="form-label">Usuario</label>
+          <input
+            type="text"
+            class="form-control"
+            id="username"
+            name="username"
+            maxlength="15"
+            required />
+        </div>
+        <div class="mb-3">
+          <label for="password" class="form-label">Contraseña</label>
+          <input
+            type="password"
+            class="form-control"
+            id="password"
+            name="password"
+            minlength="8"
+            maxlength="16"
+            autocomplete="new-password"
+            required />
+        </div>
+        <div class="d-grid">
+          <div
+            class="g-recaptcha mb-3"
+            data-sitekey="6Ld7VUwrAAAAAEtrgxoaoSsMppLfBg6LM9MUppng"></div>
+          <button class="btn btn-primary m-3" type="submit">
+            Iniciar sesión
+          </button>
+        </div>
+      </form>
+    </div>
+  </body>
 </html>
