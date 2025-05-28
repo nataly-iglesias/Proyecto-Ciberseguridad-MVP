@@ -4,6 +4,7 @@ const cors = require('cors');
 const bodyParser = require('body-parser');
 const helmet = require('helmet');
 const bcrypt = require('bcrypt');
+const registrarLog = require('../store-server/log');
 
 const app = express();
 
@@ -17,6 +18,9 @@ app.use(bodyParser.json());
 // Middleware para servir archivos estáticos
 require('dotenv').config();
 
+// 
+const { validarCliente, validarProducto, validarUsuario } = require('./utils/validarEntrada');
+
 // Conexión a la base de datos
 const db = mysql.createConnection({
    host: process.env.DB_HOST,
@@ -26,67 +30,25 @@ const db = mysql.createConnection({
    multipleStatements: true 
 });
 
-
-/* Crear base de datos si no existe
-db.query('CREATE DATABASE IF NOT EXISTS mi_tienda', (err) => {
-    if (err) {
-        console.error('Error creando base de datos:', err);
-        return;
-    }
-    // Conectar a la base de datos mi_tienda
-    db.changeUser({ database: 'mi_tienda' }, (err) => {
-        if (err) {
-            console.error('Error seleccionando base de datos:', err);
-            return;
-        }
-        // Crear tablas si no existen
-        const tablesSQL = `
-        CREATE TABLE IF NOT EXISTS usuarios (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            nombre VARCHAR(30),
-            usuario VARCHAR(15) UNIQUE,
-            contrasena VARCHAR(100),
-            rol ENUM('administrador', 'vendedor', 'encargado')
-        );
-        CREATE TABLE IF NOT EXISTS clientes (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            nombre VARCHAR(30),
-            direccion VARCHAR(50),
-            telefono VARCHAR(10),
-            correo VARCHAR(30)
-        );
-        CREATE TABLE IF NOT EXISTS productos (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            nombre VARCHAR(30),
-            descripcion TEXT NULL,
-            cantidad INT,
-            precio DECIMAL(10, 2)
-        );
-        `;
-        db.query(tablesSQL, (err) => {
-            if (err) {
-                console.error('Error creando tablas:', err);
-                return;
-            }
-            console.log('Base de datos y tablas listas');
-        });
-    });
-});
-*/
-
 const verificarRol = require('./middleware/verificarRol');
 
+
 // Ruta para registrar usuario - solo admin
+const { escapeTexto, validarUsuario } = require('./utils/validarEntrada');
+
 app.post('/api/usuarios', verificarRol(['administrador']), (req, res) => {
     const { nombre, usuario, contrasena, rol } = req.body;
-    if (!nombre || !usuario || !contrasena || !rol) {
-        return res.status(400).json({ mensaje: "Faltan campos" });
+
+    if (!validarUsuario(req.body)) {
+        return res.status(400).json({ mensaje: "Datos inválidos" });
     }
 
+    const nombreEscapado = escapeTexto(nombre);
+    const usuarioEscapado = escapeTexto(usuario);
     const hash = bcrypt.hashSync(contrasena, 10);
 
     const sql = 'INSERT INTO mi_tienda.usuarios (nombre, usuario, contrasena, rol) VALUES (?, ?, ?, ?)';
-    db.execute(sql, [nombre, usuario, hash, rol], (err, result) => {
+    db.execute(sql, [nombreEscapado, usuarioEscapado, hash, rol], (err, result) => {
         if (err) {
             if (err.code === 'ER_DUP_ENTRY') {
                 return res.status(409).json({ mensaje: 'El usuario ya existe' });
@@ -96,6 +58,7 @@ app.post('/api/usuarios', verificarRol(['administrador']), (req, res) => {
         res.status(201).json({ mensaje: 'Usuario registrado correctamente' });
     });
 });
+
 
 // Obtener todos los usuarios - solo admin
 app.get('/api/usuarios', verificarRol(['administrador']), (req, res) => {
@@ -146,12 +109,24 @@ app.delete('/api/usuarios/:id', verificarRol(['administrador']), (req, res) => {
   });
 });
 
+
 // Crear producto - solo admin y encargado
+const { validarProducto, escapeTexto } = require('./utils/validarEntrada');
+
 app.post('/api/productos', verificarRol(['administrador', 'encargado']), (req, res) => {
     const { nombre, descripcion, cantidad, precio } = req.body;
+
+    if (!validarProducto(req.body)) {
+        return res.status(400).json({ mensaje: "Datos inválidos del producto" });
+    }
+
+    const nombreEsc = escapeTexto(nombre);
+    const descripcionEsc = escapeTexto(descripcion);
+
     const sql = 'INSERT INTO productos (nombre, descripcion, cantidad, precio) VALUES (?, ?, ?, ?)';
-    db.execute(sql, [nombre, descripcion, cantidad, precio], (err) => {
+    db.execute(sql, [nombreEsc, descripcionEsc, cantidad, precio], (err) => {
         if (err) return res.status(500).json({ mensaje: 'Error al agregar producto' });
+        registrarLog(req.usuario.id, 'Agregar producto', `Producto: ${nombreEsc}, Cantidad: ${cantidad}, Precio: ${precio}`);
         res.status(201).json({ mensaje: 'Producto agregado correctamente' });
     });
 });
@@ -170,6 +145,7 @@ app.put('/api/productos/:id', verificarRol(['administrador', 'encargado']), (req
     const sql = 'UPDATE productos SET nombre = ?, descripcion = ?, cantidad = ?, precio = ? WHERE id = ?';
     db.execute(sql, [nombre, descripcion, cantidad, precio, req.params.id], (err) => {
         if (err) return res.status(500).json({ mensaje: 'Error al editar producto' });
+        registrarLog(req.usuario.id, 'Editar producto', `Producto con ID ${req.params.id} modificado: ${nombre}, cantidad: ${cantidad}, precio: ${precio}`);
         res.json({ mensaje: 'Producto actualizado' });
     });
 });
@@ -179,20 +155,35 @@ app.delete('/api/productos/:id', verificarRol(['administrador']), (req, res) => 
     const sql = 'DELETE FROM productos WHERE id = ?';
     db.execute(sql, [req.params.id], (err) => {
         if (err) return res.status(500).json({ mensaje: 'Error al eliminar producto' });
+        registrarLog(req.usuario.id, 'Eliminar producto', `Producto eliminado con ID: ${req.params.id}`);
         res.json({ mensaje: 'Producto eliminado' });
     });
 });
 
 
 // Registrar cliente - solo admin
+const { validarCliente, escapeTexto } = require('./utils/validarEntrada');
+
 app.post('/api/clientes', verificarRol(['administrador']), (req, res) => {
     const { nombre, direccion, telefono, correo } = req.body;
+
+    if (!validarCliente(req.body)) {
+        return res.status(400).json({ mensaje: "Datos de cliente inválidos" });
+    }
+
     const sql = 'INSERT INTO clientes (nombre, direccion, telefono, correo) VALUES (?, ?, ?, ?)';
-    db.execute(sql, [nombre, direccion, telefono, correo], (err) => {
+    db.execute(sql, [
+        escapeTexto(nombre),
+        escapeTexto(direccion),
+        escapeTexto(telefono),
+        escapeTexto(correo)
+    ], (err) => {
         if (err) return res.status(500).json({ mensaje: 'Error al registrar cliente' });
+        registrarLog(req.usuario.id, 'Agregar cliente', `Cliente agregado: ${nombre} (${correo})`);
         res.status(201).json({ mensaje: 'Cliente registrado correctamente' });
     });
 });
+
 
 // Editar cliente - solo admin
 app.put('/api/clientes/:id', verificarRol(['administrador']), (req, res) => {
@@ -200,6 +191,7 @@ app.put('/api/clientes/:id', verificarRol(['administrador']), (req, res) => {
     const sql = 'UPDATE clientes SET nombre = ?, direccion = ?, telefono = ?, correo = ? WHERE id = ?';
     db.execute(sql, [nombre, direccion, telefono, correo, req.params.id], (err) => {
         if (err) return res.status(500).json({ mensaje: 'Error al editar cliente' });
+        registrarLog(req.usuario.id, 'Editar cliente', `Cliente editado con ID: ${req.params.id}`);
         res.json({ mensaje: 'Cliente actualizado' });
     });
 });
@@ -209,6 +201,7 @@ app.delete('/api/clientes/:id', verificarRol(['administrador']), (req, res) => {
     const sql = 'DELETE FROM clientes WHERE id = ?';
     db.execute(sql, [req.params.id], (err) => {
         if (err) return res.status(500).json({ mensaje: 'Error al eliminar cliente' });
+        registrarLog(req.usuario.id, 'Eliminar cliente', `Cliente eliminado con ID: ${req.params.id}`);
         res.json({ mensaje: 'Cliente eliminado' });
     });
 });
@@ -227,8 +220,21 @@ const jwt = require('jsonwebtoken');
 const SECRET = process.env.JWT_SECRET
 
 // Ruta para login
-app.post('/api/login', (req, res) => {
-    const { usuario, contrasena } = req.body;
+app.post('/api/login', async (req, res) => {
+    const { usuario, contrasena, recaptchaToken } = req.body;
+
+    const secretKey = '6Ld7VUwrAAAAACHLDetn7vwtUfA7oZGZirXcRCsL'
+    const verifyUrl = `https://www.google.com/recaptcha/api/siteverify?secret=${secretKey}&response=${recaptchaToken}`;
+
+    try {
+        const recaptchaRes = await fetch(verifyUrl, { method: 'POST' });
+        const recaptchaData = await recaptchaRes.json();
+
+        if (!recaptchaData.success) {
+            return res.status(400).json({ mensaje: 'reCAPTCHA inválido' });
+        }
+
+
     const sql = 'SELECT * FROM mi_tienda.usuarios WHERE usuario = ?';
     db.execute(sql, [usuario], (err, results) => {
         if (err) return res.status(500).json({ mensaje: 'Error al iniciar sesión' });
@@ -251,8 +257,10 @@ app.post('/api/login', (req, res) => {
             { expiresIn: '1h' });
         res.json({ token, usuario: user.usuario, rol: user.rol });
     });
+} catch (error){
+    res.status(500).json({ mensaje: 'Error al verificar reCAPTCHA' });
+}
 });
-
 
 const PORT = 3000;
 app.listen(PORT, () => {
