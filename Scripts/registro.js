@@ -65,6 +65,7 @@ let idTrabajadorEditar = null;
 document.getElementById("cancelBtn").addEventListener("click", function () {
   modoEdicion = false;
   idTrabajadorEditar = null;
+  document.getElementById("formTitle").textContent = "Registrar trabajador"
   document.getElementById("form").style.display = "none";
   document.getElementById("addBtn").textContent = "Registrar";
   document.getElementById("registerForm").reset();
@@ -77,6 +78,7 @@ document
   .addEventListener("submit", function (event) {
     event.preventDefault();
 
+    document.getElementById("formTitle").textContent = "Registrar trabajador"
     const nombre = document.getElementById("nombre").value;
     const usuario = document.getElementById("usuario").value;
     const contrasena = document.getElementById("password").value;
@@ -184,6 +186,9 @@ fetch("http://localhost:3000/api/usuarios", {
 
         // Mostrar formulario si está oculto
         document.getElementById("form").style.display = "block";
+
+        //Cambiar titulo del formulario
+        document.getElementById("formTitle").textContent = "Editar trabajador";
 
         // Cambiar modo a edición
         modoEdicion = true;

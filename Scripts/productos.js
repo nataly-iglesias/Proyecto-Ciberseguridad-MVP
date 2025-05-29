@@ -76,6 +76,7 @@ document
   .addEventListener("submit", function (event) {
     event.preventDefault();
 
+    document.getElementById("formTitle").textContent = "Agregar producto"
     const nombre = document.getElementById("nombre").value;
     const descripcion = document.getElementById("descripcion").value;
     const cantidad = document.getElementById("cantidad").value;
@@ -161,6 +162,9 @@ fetch("http://localhost:3000/api/productos", {
         // Mostrar formulario si está oculto
         document.getElementById("form").style.display = "block";
 
+        //Cambiar titulo del formulario
+        document.getElementById("formTitle").textContent = "Editar Producto";
+
         // Cambiar modo a edición
         modoEdicion = true;
         idProductoEditar = id;
@@ -175,6 +179,7 @@ fetch("http://localhost:3000/api/productos", {
           .addEventListener("click", function () {
             modoEdicion = false;
             idProductoEditar = null;
+            document.getElementById("formTitle").textContent = "Agregar producto"
             document.getElementById("form").style.display = "none";
             document.getElementById("addBtn").textContent = "Agregar";
             document.getElementById("formProduct").reset();

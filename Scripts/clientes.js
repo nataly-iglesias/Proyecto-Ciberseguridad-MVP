@@ -82,6 +82,7 @@ document
   .getElementById("formClient")
   .addEventListener("submit", function (event) {
     event.preventDefault();
+    document.getElementById("formTitle").textContent = "Registrar cliente"
     const nombre = document.getElementById("nombre").value;
     const direccion = document.getElementById("direccion").value;
     const telefono = document.getElementById("telefono").value;
@@ -144,8 +145,8 @@ fetch("http://localhost:3000/api/clientes", {
       clientesContainer.appendChild(clienteItem);
     });
 
-    // Ocultar botón de editar si no es admin o encargado
-    if (rol !== "administrador" && rol !== "encargado") {
+    // Ocultar botón de editar si no es admin
+    if (rol !== "administrador") {
       document
         .querySelectorAll(".editButton")
         .forEach((button) => (button.style.display = "none"));
@@ -165,6 +166,9 @@ fetch("http://localhost:3000/api/clientes", {
         // Mostrar formulario si está oculto
         document.getElementById("form").style.display = "block";
 
+        //Cambiar titulo del formulario
+        document.getElementById("formTitle").textContent = "Editar cliente";
+
         // Cambiar modo a edición
         modoEdicion = true;
         idClienteEditar = id;
@@ -179,6 +183,7 @@ fetch("http://localhost:3000/api/clientes", {
           .addEventListener("click", function () {
             modoEdicion = false;
             idClienteEditar = null;
+            document.getElementById("formTitle").textContent = "Registrar cliente"
             document.getElementById("form").style.display = "none";
             document.getElementById("addBtn").textContent = "Agregar";
             document.getElementById("formClient").reset();

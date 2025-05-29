@@ -34,6 +34,7 @@ const db = mysql.createConnection({
   multipleStatements: true,
 });
 
+
 const verificarRol = require("./middleware/verificarRol");
 const SECRET = process.env.JWT_SECRET;
 
@@ -47,7 +48,7 @@ app.post("/api/usuarios", verificarRol(["administrador"]), (req, res) => {
 
   const nombreEscapado = escapeTexto(nombre);
   const usuarioEscapado = escapeTexto(usuario);
-  const hash = bcrypt.hashSync(contrasena, 10);
+  const hash = bcrypt.hashSync(contrasena, 10); 
 
   const sql =
     "INSERT INTO mi_tienda.usuarios (nombre, usuario, contrasena, rol) VALUES (?, ?, ?, ?)";
@@ -208,6 +209,7 @@ app.delete(
   }
 );
 
+
 // Registrar cliente - solo admin
 app.post("/api/clientes", verificarRol(["administrador"]), (req, res) => {
   const { nombre, direccion, telefono, correo } = req.body;
@@ -281,7 +283,7 @@ app.delete("/api/clientes/:id", verificarRol(["administrador"]), (req, res) => {
   });
 });
 
-// Ver clientes - admin y vendedor
+// Ver clientes - admin, encargado, vendedor
 app.get(
   "/api/clientes",
   verificarRol(["administrador", "encargado", "vendedor"]),
