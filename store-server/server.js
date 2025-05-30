@@ -336,7 +336,7 @@ app.get(
 const rateLimit = require('express-rate-limit');
 app.use('/api/login', rateLimit({
   windowMs: 10 * 60 * 1000, // 10 minutos
-  max: 10, // máximo 10 intentos por IP
+  max: 5, // máximo 5 intentos por IP
   message: { mensaje: 'Demasiados intentos, intenta más tarde.' }
 }));
 

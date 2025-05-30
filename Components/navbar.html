@@ -30,11 +30,25 @@
                         <a class="nav-link" href="/Pages/Registro.html">Trabajadores</a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link" href="/Pages/login.html">Cerrar sesión</a>
+                       <!-- <a class="nav-link" href="/Pages/login.html">Cerrar sesión</a> -->
+                        <button id="logoutBtn" class="nav-link btn btn-link" style="text-decoration:none;">Cerrar sesión</button>
                     </li>
                 </ul>
             </div>
         </div>
     </nav>
+
+    <script>
+  document.addEventListener('DOMContentLoaded', function() {
+    const logoutBtn = document.getElementById('logoutBtn');
+    if (logoutBtn) {
+      logoutBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        localStorage.removeItem('token'); // Elimina el token del almacenamiento local
+        window.location.href = '/Pages/login.html';
+      });
+    }
+  });
+</script>
 </body>
 </html>

@@ -1,3 +1,8 @@
+// Redirige al login si no hay token
+if (!localStorage.getItem('token')) {
+  window.location.href = '/Pages/login.html';
+}
+
 // Mostrar u ocultar el formulario al hacer clic en el botón
 document.getElementById("addClient").addEventListener("click", function () {
   const form = document.getElementById("form");
@@ -38,6 +43,14 @@ document.addEventListener("DOMContentLoaded", function () {
           navRegistro.style.display = "none"; // Ocultar el enlace de registro si no es administrador
         }
       }
+      // Cerrar sesión
+      document.addEventListener("click", function (e) {
+        if (e.target && e.target.id === "logoutBtn") {
+          e.preventDefault();
+          localStorage.removeItem("token");
+          window.location.href = "/Pages/login.html";
+        }
+      });
     })
     .catch((error) => {
       console.error("Error cargando navbar:", error);
@@ -82,7 +95,7 @@ document
   .getElementById("formClient")
   .addEventListener("submit", function (event) {
     event.preventDefault();
-    document.getElementById("formTitle").textContent = "Registrar cliente"
+    document.getElementById("formTitle").textContent = "Registrar cliente";
     const nombre = document.getElementById("nombre").value;
     const direccion = document.getElementById("direccion").value;
     const telefono = document.getElementById("telefono").value;
@@ -183,7 +196,8 @@ fetch("http://localhost:3000/api/clientes", {
           .addEventListener("click", function () {
             modoEdicion = false;
             idClienteEditar = null;
-            document.getElementById("formTitle").textContent = "Registrar cliente"
+            document.getElementById("formTitle").textContent =
+              "Registrar cliente";
             document.getElementById("form").style.display = "none";
             document.getElementById("addBtn").textContent = "Agregar";
             document.getElementById("formClient").reset();

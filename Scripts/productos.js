@@ -1,3 +1,8 @@
+// Redirige al login si no hay token
+if (!localStorage.getItem('token')) {
+  window.location.href = '/Pages/login.html';
+}
+
 // Parse JWT para obtener rol
 function parseJwt(token) {
   try {
@@ -62,6 +67,15 @@ document.addEventListener("DOMContentLoaded", function () {
           navRegistro.style.display = "none"; // Ocultar el enlace de registro si no es administrador
         }
       }
+
+      // Cerrar sesión
+      document.addEventListener("click", function (e) {
+        if (e.target && e.target.id === "logoutBtn") {
+          e.preventDefault();
+          localStorage.removeItem("token");
+          window.location.href = "/Pages/login.html";
+        }
+      });
     })
     .catch((error) => console.error("Error cargando navbar:", error));
 });
@@ -76,7 +90,7 @@ document
   .addEventListener("submit", function (event) {
     event.preventDefault();
 
-    document.getElementById("formTitle").textContent = "Agregar producto"
+    document.getElementById("formTitle").textContent = "Agregar producto";
     const nombre = document.getElementById("nombre").value;
     const descripcion = document.getElementById("descripcion").value;
     const cantidad = document.getElementById("cantidad").value;
@@ -179,7 +193,8 @@ fetch("http://localhost:3000/api/productos", {
           .addEventListener("click", function () {
             modoEdicion = false;
             idProductoEditar = null;
-            document.getElementById("formTitle").textContent = "Agregar producto"
+            document.getElementById("formTitle").textContent =
+              "Agregar producto";
             document.getElementById("form").style.display = "none";
             document.getElementById("addBtn").textContent = "Agregar";
             document.getElementById("formProduct").reset();

@@ -1,3 +1,8 @@
+// Redirige al login si no hay token
+if (!localStorage.getItem('token')) {
+  window.location.href = '/Pages/login.html';
+}
+
 // Mostrar el navbar al cargar la página
 document.addEventListener("DOMContentLoaded", function () {
   fetch("/Components/navbar.html")
@@ -21,6 +26,15 @@ document.addEventListener("DOMContentLoaded", function () {
           navRegistro.style.display = "none"; // Ocultar el enlace de registro si no es administrador
         }
       }
+
+      // Cerrar sesión
+      document.addEventListener("click", function (e) {
+        if (e.target && e.target.id === "logoutBtn") {
+          e.preventDefault();
+          localStorage.removeItem("token");
+          window.location.href = "/Pages/login.html";
+        }
+      });
     })
     .catch((error) => {
       console.error("Error cargando navbar:", error);
@@ -65,7 +79,7 @@ let idTrabajadorEditar = null;
 document.getElementById("cancelBtn").addEventListener("click", function () {
   modoEdicion = false;
   idTrabajadorEditar = null;
-  document.getElementById("formTitle").textContent = "Registrar trabajador"
+  document.getElementById("formTitle").textContent = "Registrar trabajador";
   document.getElementById("form").style.display = "none";
   document.getElementById("addBtn").textContent = "Registrar";
   document.getElementById("registerForm").reset();
@@ -78,7 +92,7 @@ document
   .addEventListener("submit", function (event) {
     event.preventDefault();
 
-    document.getElementById("formTitle").textContent = "Registrar trabajador"
+    document.getElementById("formTitle").textContent = "Registrar trabajador";
     const nombre = document.getElementById("nombre").value;
     const usuario = document.getElementById("usuario").value;
     const contrasena = document.getElementById("password").value;

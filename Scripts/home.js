@@ -1,3 +1,8 @@
+// Redirige al login si no hay token
+if (!localStorage.getItem('token')) {
+  window.location.href = '/Pages/login.html';
+}
+
 // Función para decodificar el token JWT
 function parseJwt(token) {
   try {
@@ -40,6 +45,15 @@ fetch("/Components/navbar.html")
         navRegistro.style.display = "none"; // Ocultar el enlace de registro si no es administrador
       }
     }
+
+    // Cerrar sesión
+    document.addEventListener("click", function (e) {
+      if (e.target && e.target.id === "logoutBtn") {
+        e.preventDefault();
+        localStorage.removeItem("token");
+        window.location.href = "/Pages/login.html";
+      }
+    });
   })
   .catch((error) => {
     console.error("Error cargando navbar:", error);

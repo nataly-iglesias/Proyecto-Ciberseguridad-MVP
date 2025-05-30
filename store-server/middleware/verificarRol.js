@@ -1,22 +1,3 @@
-// Verifica si el usuario tiene el rol adecuado para acceder a la ruta
-/* function verificarRol(rolesPermitidos) {
-    return (req, res, next) => {
-        const rolUsuario = req.headers['rol']; // En producción usarías tokens
-        if (!rolesPermitidos.includes(rolUsuario)) {
-            return res.status(403).json({ mensaje: 'No tienes permiso para realizar esta acción' });
-        }
-        next();
-    };
-}
-
-module.exports = verificarRol;
-*/
-
-/*
-const jwt = require('jsonwebtoken');
-const SECRET = 'Pskl3r0n';
-*/
-
 require('dotenv').config();
 
 const jwt = require('jsonwebtoken');
