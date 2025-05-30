@@ -10,8 +10,36 @@ require("dotenv").config();
 
 const app = express();
 
-// Middleware de seguridad
-app.use(helmet());
+// Middleware de seguridad HTTP helmet
+app.use(
+  helmet.contentSecurityPolicy({
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: [
+        "'self'",
+        "https://www.google.com/recaptcha/",
+        "https://www.gstatic.com/recaptcha/",
+        "https://cdn.jsdelivr.net",
+      ],
+      styleSrc: [
+        "'self'",
+        "https://cdn.jsdelivr.net",
+        "'unsafe-inline'",
+      ],
+      imgSrc: [
+        "'self'",
+        "data:",
+        "https://www.gstatic.com/recaptcha/",
+        "https://www.google.com/recaptcha/",
+      ],
+      connectSrc: [
+        "'self'",
+        "https://www.google.com/recaptcha/",
+        "https://www.gstatic.com/recaptcha/",
+      ],
+    },
+  })
+);
 
 // Middleware general
 app.use(cors());
@@ -34,6 +62,14 @@ const db = mysql.createConnection({
   multipleStatements: true,
 });
 
+db.connect((err) => {
+  if (err) {
+    console.error("Error al conectar con la base de datos:", err);
+    process.exit(1); // Detiene el servidor
+  } else {
+    console.log("Conectado a la base de datos.");
+  }
+});
 
 const verificarRol = require("./middleware/verificarRol");
 const SECRET = process.env.JWT_SECRET;
@@ -296,19 +332,28 @@ app.get(
   }
 );
 
+// Limite de peticiones por IP
+const rateLimit = require('express-rate-limit');
+app.use('/api/login', rateLimit({
+  windowMs: 10 * 60 * 1000, // 10 minutos
+  max: 10, // máximo 10 intentos por IP
+  message: { mensaje: 'Demasiados intentos, intenta más tarde.' }
+}));
+
+
 // Ruta para login
 app.post("/api/login", async (req, res) => {
   const { usuario, contrasena, recaptchaToken } = req.body;
 
-  const secretKey = "6Ld7VUwrAAAAACHLDetn7vwtUfA7oZGZirXcRCsL";
+  const secretKey = process.env.RECAPTCHA_SECRET;
   const verifyUrl = `https://www.google.com/recaptcha/api/siteverify?secret=${secretKey}&response=${recaptchaToken}`;
 
   try {
     const recaptchaRes = await fetch(verifyUrl, { method: "POST" });
     const recaptchaData = await recaptchaRes.json();
-
-    if (!recaptchaData.success) {
-      return res.status(400).json({ mensaje: "reCAPTCHA inválido" });
+    
+    if (!recaptchaData.success || recaptchaData.score < 0.5) {
+      return res.status(400).json({ mensaje: "Falló la verificación reCAPTCHA" });
     }
 
     const sql = "SELECT * FROM mi_tienda.usuarios WHERE usuario = ?";
